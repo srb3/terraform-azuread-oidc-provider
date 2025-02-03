@@ -13,6 +13,7 @@ module "oidc_provider" {
     "https://my-app.example.com/oauth/callback",
     "http://localhost:3000/callback"
   ]
+  app_role = "kong-admin"
 }
 
 # Example outputs

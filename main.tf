@@ -1,7 +1,20 @@
+resource "random_uuid" "app_role" {}
+data "azuread_user" "current_user" {
+  object_id = data.azuread_client_config.current.object_id
+}
 resource "azuread_application" "oidc" {
   display_name    = var.display_name
   identifier_uris = var.identifier_uris
   owners          = [data.azuread_client_config.current.object_id]
+
+  app_role {
+    allowed_member_types = ["User", "Application"]
+    description         = var.app_role
+    display_name        = var.app_role
+    enabled             = true
+    id                  = random_uuid.app_role.result
+    value               = var.app_role
+  }
 
   web {
     redirect_uris = var.redirect_uris
@@ -43,6 +56,12 @@ resource "azuread_service_principal" "oidc" {
   }
 }
 
+resource "azuread_app_role_assignment" "current_user" {
+  app_role_id         = random_uuid.app_role.result
+  principal_object_id = data.azuread_user.current_user.object_id
+  resource_object_id  = azuread_service_principal.oidc.object_id
+}
+
 resource "azuread_application_password" "oidc" {
   application_id = azuread_application.oidc.id
 }
@@ -73,3 +92,4 @@ data "http" "metadata_alt" {
     Accept = "application/json"
   }
 }
+
