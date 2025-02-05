@@ -1,24 +1,41 @@
 resource "random_uuid" "app_role" {}
+
+resource "azuread_user" "users" {
+  for_each              = { for user in var.users : user.username => user }
+  user_principal_name   = each.value.username
+  display_name          = each.value.display_name
+  password              = each.value.password
+  force_password_change = false
+}
+
+
 data "azuread_user" "current_user" {
   object_id = data.azuread_client_config.current.object_id
 }
+
+resource "random_uuid" "app_roles" {
+  for_each = toset(local.all_roles)
+}
+
 resource "azuread_application" "oidc" {
   display_name    = var.display_name
   identifier_uris = var.identifier_uris
   owners          = [data.azuread_client_config.current.object_id]
-
-  app_role {
-    allowed_member_types = ["User", "Application"]
-    description         = var.app_role
-    display_name        = var.app_role
-    enabled             = true
-    id                  = random_uuid.app_role.result
-    value               = var.app_role
+  dynamic "app_role" {
+    for_each = random_uuid.app_roles
+    content {
+      allowed_member_types = ["User", "Application"]
+      description          = app_role.key
+      display_name         = app_role.key
+      enabled              = true
+      id                   = app_role.value.result
+      value                = app_role.key
+    }
   }
 
   web {
     redirect_uris = var.redirect_uris
-    
+
     implicit_grant {
       access_token_issuance_enabled = false
       id_token_issuance_enabled     = true
@@ -49,15 +66,22 @@ resource "azuread_application" "oidc" {
 
 resource "azuread_service_principal" "oidc" {
   client_id = azuread_application.oidc.client_id
-  
+
   feature_tags {
     enterprise = true
     gallery    = true
   }
 }
 
+resource "azuread_app_role_assignment" "users" {
+  for_each            = { for user in var.users : user.username => user }
+  app_role_id         = random_uuid.app_roles[each.value.role].result
+  principal_object_id = azuread_user.users[each.key].object_id
+  resource_object_id  = azuread_service_principal.oidc.object_id
+}
+
 resource "azuread_app_role_assignment" "current_user" {
-  app_role_id         = random_uuid.app_role.result
+  app_role_id         = random_uuid.app_roles[var.app_role].result
   principal_object_id = data.azuread_user.current_user.object_id
   resource_object_id  = azuread_service_principal.oidc.object_id
 }
@@ -69,6 +93,7 @@ resource "azuread_application_password" "oidc" {
 data "azuread_client_config" "current" {}
 
 locals {
+  all_roles  = distinct(concat([var.app_role], [for user in var.users : user.role]))
   base       = "https://login.microsoftonline.com"
   base_alt   = "https://sts.windows.net"
   tenant     = "${local.base}/${data.azuread_client_config.current.tenant_id}"

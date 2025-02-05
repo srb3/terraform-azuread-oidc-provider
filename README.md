@@ -60,10 +60,11 @@ module "oidc_provider" {
 
 ## Example
 
-See the [examples](./examples) directory for working examples.
+See the [example's](./examples) directory for working examples.
 
 ## Development
 
 1. Clone the repository
 2. Make your changes
-3. Run tests: `make test TENANT_ID=your-tenant-id`
+3. Run tests: `make test_basic TENANT_ID=your-tenant-id`
+3. Run tests: `make test_additional_users TENANT_ID=your-tenant-id USER_PASSWORD=password-for-users-being-created DOMAIN=you-azure-ad-domain`
