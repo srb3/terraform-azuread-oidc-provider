@@ -3,19 +3,13 @@ provider "azuread" {
 }
 
 module "oidc_provider" {
-  source = "../"  # Path to module root
-  
-  display_name = "my-oidc-app"
-  identifier_uris = [
-    "https://my-app.example.com"
-  ]
-  redirect_uris = [
-    "https://my-app.example.com/oauth/callback",
-    "http://localhost:3000/callback"
-  ]
-  app_role = "kong-admin"
-}
+  source = "../../"
 
+  display_name    = "my-oidc-app"
+  identifier_uris = ["https://my-app.example.com"]
+  redirect_uris   = ["https://my-app.example.com/oauth/callback"]
+  app_role        = "kong-admin"
+}
 # Example outputs
 output "client_id" {
   value = module.oidc_provider.client_id

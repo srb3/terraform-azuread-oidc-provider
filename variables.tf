@@ -17,3 +17,14 @@ variable "app_role" {
   type        = string
   description = "The name of the app role to create. This will be used for description, display_name and value."
 }
+
+variable "users" {
+  type = list(object({
+    username     = string
+    role         = string
+    password     = optional(string)
+    display_name = string
+  }))
+  description = "List of additional users and their roles to assign"
+  default     = []
+}
