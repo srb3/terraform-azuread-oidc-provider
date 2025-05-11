@@ -29,3 +29,15 @@ variable "users" {
   description = "List of additional users and their roles to assign"
   default     = []
 }
+
+variable "enable_scim" {
+  description = "Enable SCIM provisioning support for the application"
+  type        = bool
+  default     = false
+}
+
+variable "scim_notification_email" {
+  description = "Email address for SCIM provisioning notifications"
+  type        = string
+  default     = ""
+}
