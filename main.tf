@@ -6,12 +6,10 @@ resource "azuread_user" "users" {
   display_name          = each.value.display_name
   password              = each.value.password
   force_password_change = false
+  mail                  = coalesce(each.value.email, each.value.username)
+  mail_nickname         = split("@", coalesce(each.value.email, each.value.username))[0]
 }
 
-
-data "azuread_user" "current_user" {
-  object_id = data.azuread_client_config.current.object_id
-}
 
 resource "random_uuid" "app_roles" {
   for_each = toset(local.all_roles)
@@ -82,7 +80,7 @@ resource "azuread_app_role_assignment" "users" {
 
 resource "azuread_app_role_assignment" "current_user" {
   app_role_id         = random_uuid.app_roles[var.app_role].result
-  principal_object_id = data.azuread_user.current_user.object_id
+  principal_object_id = data.azuread_client_config.current.object_id
   resource_object_id  = azuread_service_principal.oidc.object_id
 }
 
