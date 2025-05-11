@@ -1,9 +1,9 @@
 output "application" {
-  value = azuread_application.oidc
+  value = local.application
 }
 
 output "client_id" {
-  value = azuread_application.oidc.client_id
+  value = local.application.client_id
 }
 
 output "client_secret" {
@@ -96,7 +96,7 @@ output "scim_configuration_instructions" {
   value = (var.enable_scim ? <<-EOT
     SCIM is enabled for this application. To complete configuration:
     
-    1. Navigate to Azure Portal > Enterprise Applications > ${azuread_application.oidc.display_name}
+    1. Navigate to Azure Portal > Enterprise Applications > ${local.application.display_name}
     2. Go to Provisioning tab
     3. You should now be able to click "Get started"
     4. Set Provisioning Mode to "Automatic"
@@ -118,9 +118,9 @@ EOT
 }
 
 output "service_principal_id" {
-  value = azuread_service_principal.oidc.id
+  value = local.service_principal.id
 }
 
 output "app_roles" {
-  value = azuread_application.oidc.app_role
+  value = local.app_roles_list
 }
