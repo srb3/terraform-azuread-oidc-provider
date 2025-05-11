@@ -85,3 +85,8 @@ output "end_session_endpoint_alt" {
 output "kerberos_endpoint_alt" {
   value = jsondecode(data.http.metadata_alt.response_body).kerberos_endpoint
 }
+
+output "scim_enabled" {
+  value = var.enable_scim
+}
+
