@@ -41,3 +41,27 @@ variable "scim_notification_email" {
   type        = string
   default     = ""
 }
+
+variable "import_existing_app" {
+  description = "Import an existing gallery application"
+  type        = bool
+  default     = false
+}
+
+variable "existing_client_id" {
+  description = "Client ID (Application ID) of existing application"
+  type        = string
+  default     = ""
+}
+
+variable "existing_app_object_id" {
+  description = "Object ID of existing application to import"
+  type        = string
+  default     = ""
+}
+
+variable "existing_sp_object_id" {
+  description = "Object ID of existing service principal to import"
+  type        = string
+  default     = ""
+}
