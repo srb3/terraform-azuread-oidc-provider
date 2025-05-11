@@ -68,7 +68,9 @@ resource "azuread_application" "oidc" {
   dynamic "app_role" {
     for_each = local.all_app_roles
     content {
-      allowed_member_types = ["User"]
+      # For SCIM roles (msiam_access and User), only allow "User" member type
+      # For other roles, allow both "User" and "Application"
+      allowed_member_types = (app_role.key == "msiam_access" || app_role.key == "User") && var.enable_scim ? ["User"] : ["User", "Application"]
       description          = app_role.value.description
       display_name         = app_role.key
       enabled              = true
@@ -108,7 +110,7 @@ resource "azuread_application" "oidc" {
   }
 }
 
-# Service Principal - to enable SCIM
+# Service Principal - This is where SCIM gets enabled
 resource "azuread_service_principal" "oidc" {
   client_id = azuread_application.oidc.client_id
   
@@ -139,10 +141,12 @@ resource "azuread_app_role_assignment" "current_user" {
   resource_object_id  = azuread_service_principal.oidc.object_id
 }
 
+# Application password
 resource "azuread_application_password" "oidc" {
   application_id = azuread_application.oidc.id
 }
 
+# HTTP data sources for OIDC metadata
 locals {
   base       = "https://login.microsoftonline.com"
   base_alt   = "https://sts.windows.net"
