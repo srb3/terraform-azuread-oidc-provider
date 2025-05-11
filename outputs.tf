@@ -7,7 +7,8 @@ output "client_id" {
 }
 
 output "client_secret" {
-  value = azuread_application_password.oidc.value
+  value     = azuread_application_password.oidc.value
+  sensitive = true
 }
 
 output "base-url" {
@@ -86,7 +87,7 @@ output "kerberos_endpoint_alt" {
   value = jsondecode(data.http.metadata_alt.response_body).kerberos_endpoint
 }
 
-# SCIM-specific outputs (only if enabled)
+# SCIM-specific outputs
 output "scim_enabled" {
   value = var.enable_scim
 }
@@ -97,7 +98,7 @@ output "scim_configuration_instructions" {
     
     1. Navigate to Azure Portal > Enterprise Applications > ${azuread_application.oidc.display_name}
     2. Go to Provisioning tab
-    3. Click "Get started"
+    3. You should now be able to click "Get started"
     4. Set Provisioning Mode to "Automatic"
     5. Configure Admin Credentials:
        - Tenant URL: (Get from Insomnia SCIM panel)
@@ -107,10 +108,11 @@ output "scim_configuration_instructions" {
     8. Go to Users and groups tab to assign users/groups
     9. Start provisioning from the Provisioning tab
     
-    Required Permissions Granted:
-    - User.ReadWrite.All
-    - Group.ReadWrite.All
-    - User.Export.All
+    Required elements configured:
+    - msiam_access role added (ID: b9632174-c057-4f7e-951b-be3adc52bfe6)
+    - User role added (ID: 18d14569-c3bd-439b-9a66-3a2aee01d14f)
+    - Service principal tags: WindowsAzureActiveDirectoryCustomSingleSignOnApplication, WindowsAzureActiveDirectoryIntegratedApp
+    - App role assignment required: true
 EOT
   : "SCIM is not enabled for this application. Set enable_scim = true to enable SCIM support.")
 }
