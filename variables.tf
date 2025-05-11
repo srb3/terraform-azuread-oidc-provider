@@ -24,6 +24,7 @@ variable "users" {
     role         = string
     password     = optional(string)
     display_name = string
+    email        = optional(string)  # Add this line
   }))
   description = "List of additional users and their roles to assign"
   default     = []
