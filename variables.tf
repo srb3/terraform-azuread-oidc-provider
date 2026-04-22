@@ -29,3 +29,15 @@ variable "users" {
   description = "List of additional users and their roles to assign"
   default     = []
 }
+
+variable "enable_client_credentials" {
+  type        = bool
+  description = "If true, assign app roles to this application's own service principal so that client-credentials (M2M) tokens issued for it carry the roles claim. The token's appid will be this application's client_id."
+  default     = false
+}
+
+variable "service_principal_roles" {
+  type        = list(string)
+  description = "App role values to assign to this app's own service principal for the client-credentials flow. Each value must be defined as an app role on the application (i.e. equal to var.app_role or one of var.users[*].role). Defaults to [var.app_role] when empty. Only used when var.enable_client_credentials = true."
+  default     = []
+}
