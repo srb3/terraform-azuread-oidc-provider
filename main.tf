@@ -84,6 +84,18 @@ resource "azuread_app_role_assignment" "current_user" {
   resource_object_id  = azuread_service_principal.oidc.object_id
 }
 
+# Self-assign app roles to this app's own service principal so that
+# client-credentials (M2M) tokens issued for it carry the roles claim.
+# Without this, M2M tokens contain appid but no roles → role-based
+# authorization (e.g. Kong post-function checking method:path against
+# roles[]) won't work.
+resource "azuread_app_role_assignment" "service_principal" {
+  for_each            = toset(local.sp_roles)
+  app_role_id         = random_uuid.app_roles[each.value].result
+  principal_object_id = azuread_service_principal.oidc.object_id
+  resource_object_id  = azuread_service_principal.oidc.object_id
+}
+
 resource "azuread_application_password" "oidc" {
   application_id = azuread_application.oidc.id
 }
@@ -91,7 +103,14 @@ resource "azuread_application_password" "oidc" {
 data "azuread_client_config" "current" {}
 
 locals {
-  all_roles  = distinct(concat([var.app_role], [for user in var.users : user.role]))
+  sp_roles = var.enable_client_credentials ? (
+    length(var.service_principal_roles) > 0 ? var.service_principal_roles : [var.app_role]
+  ) : []
+  all_roles = distinct(concat(
+    [var.app_role],
+    [for user in var.users : user.role],
+    local.sp_roles,
+  ))
   base       = "https://login.microsoftonline.com"
   base_alt   = "https://sts.windows.net"
   tenant     = "${local.base}/${data.azuread_client_config.current.tenant_id}"

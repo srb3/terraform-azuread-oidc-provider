@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-04-22
+- Added support for the client-credentials (M2M) flow via two new variables:
+  - `enable_client_credentials` (bool, default `false`) — opt-in switch
+  - `service_principal_roles` (list, default `[]`) — roles to self-assign to the
+    app's own service principal; defaults to `[var.app_role]` when empty
+- When enabled, `azuread_app_role_assignment.service_principal` self-assigns
+  the listed roles so M2M tokens issued for this app carry the `roles` claim
+- Fixed `versions.tf` to declare the `azuread` provider (the resources used
+  are `azuread_*`, not `azurerm_*`)
+
 ## [2.0.0] - 2025-05-11
 - Removed support for SCIM
 
