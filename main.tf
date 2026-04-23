@@ -19,6 +19,14 @@ resource "azuread_application" "oidc" {
   display_name    = var.display_name
   identifier_uris = var.identifier_uris
   owners          = [data.azuread_client_config.current.object_id]
+
+  lifecycle {
+    precondition {
+      condition     = length(local.app_roles_effective) > 0
+      error_message = "At least one app role must be declared — set either `app_role` (string) or `app_roles` (list(string))."
+    }
+  }
+
   dynamic "app_role" {
     for_each = random_uuid.app_roles
     content {
@@ -79,7 +87,11 @@ resource "azuread_app_role_assignment" "users" {
 }
 
 resource "azuread_app_role_assignment" "current_user" {
-  app_role_id         = random_uuid.app_roles[var.app_role].result
+  # Assign the first effective app role to the tenant user running
+  # `terraform apply`. Kept as a single assignment (not one-per-role)
+  # to preserve v2.1 behaviour for callers using the single-value
+  # `app_role` input.
+  app_role_id         = random_uuid.app_roles[local.app_roles_effective[0]].result
   principal_object_id = data.azuread_client_config.current.object_id
   resource_object_id  = azuread_service_principal.oidc.object_id
 }
@@ -103,11 +115,18 @@ resource "azuread_application_password" "oidc" {
 data "azuread_client_config" "current" {}
 
 locals {
+  # Union of the legacy single-value `app_role` (if set) and the
+  # new list-valued `app_roles`. De-duplicated so callers that set
+  # both can't accidentally create a duplicate role.
+  app_roles_effective = distinct(concat(
+    var.app_role != null ? [var.app_role] : [],
+    var.app_roles,
+  ))
   sp_roles = var.enable_client_credentials ? (
-    length(var.service_principal_roles) > 0 ? var.service_principal_roles : [var.app_role]
+    length(var.service_principal_roles) > 0 ? var.service_principal_roles : local.app_roles_effective
   ) : []
   all_roles = distinct(concat(
-    [var.app_role],
+    local.app_roles_effective,
     [for user in var.users : user.role],
     local.sp_roles,
   ))

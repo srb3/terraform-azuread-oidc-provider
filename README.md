@@ -40,17 +40,19 @@ Set `enable_client_credentials = true` to make the module self-assign the config
 ```hcl
 module "oidc_provider" {
   source  = "srb3/oidc-provider/azuread"
-  version = "~> 2.1"
+  version = "~> 2.2"
 
   display_name    = "my-m2m-app"
   identifier_uris = ["api://my-m2m-app"]
   redirect_uris   = []  # not used by CC, but variable is required
-  app_role        = "service.read"
+
+  # Declare multiple roles in a single call — each value becomes an
+  # app role on the application, and (because CC is enabled below) is
+  # self-assigned to the SP so M2M tokens carry all of them.
+  app_roles = ["service.read", "service.write"]
 
   enable_client_credentials = true
-  # Defaults to [var.app_role] when empty. Pass an explicit list to
-  # assign multiple roles at once.
-  service_principal_roles = ["service.read", "service.write"]
+  # Omit service_principal_roles to default to the full app_roles list.
 }
 ```
 
@@ -68,6 +70,15 @@ The resulting access token will carry `appid: {client_id}` and `roles: ["service
 
 > **Azure AD constraint on role values:** values must start with a letter, may contain `a-z A-Z 0-9 _ - . : /`, and must be ≤ 250 chars. Avoid leading slashes — e.g. use `get:/users` rather than `/users:get`.
 
+### Single- vs multi-role inputs
+
+| Your situation | What to set |
+|---|---|
+| Exactly one role on the app | `app_role = "foo"` (legacy, still works) **or** `app_roles = ["foo"]` |
+| Multiple roles on one app | `app_roles = ["foo", "bar", ...]` |
+| Upgrading an existing v2.1 caller | No change needed. `app_role` still accepted. |
+| Existing caller wants to add a role without changing the primary | Keep `app_role = "foo"`, add `app_roles = ["bar"]` — they're unioned |
+
 ## Inputs
 
 | Name | Description | Type | Default | Required |
@@ -75,10 +86,13 @@ The resulting access token will carry `appid: {client_id}` and `roles: ["service
 | `display_name` | Display name for the application | `string` | — | yes |
 | `identifier_uris` | Identifier URIs (e.g. `api://my-app`) | `list(string)` | — | yes |
 | `redirect_uris` | Allowed redirect URIs (can be `[]` for CC-only) | `list(string)` | — | yes |
-| `app_role` | Default app role created on the application | `string` | — | yes |
+| `app_role` | Single app role (legacy — prefer `app_roles`). Merged with `app_roles` if both set. | `string` | `null` | no* |
+| `app_roles` | List of app roles to create on the application. | `list(string)` | `[]` | no* |
 | `users` | Additional users + role assignments (for ROPC / interactive) | `list(object)` | `[]` | no |
 | `enable_client_credentials` | Self-assign roles to the SP for M2M flows | `bool` | `false` | no |
-| `service_principal_roles` | Roles to self-assign when CC is enabled. Defaults to `[var.app_role]` when empty | `list(string)` | `[]` | no |
+| `service_principal_roles` | Roles to self-assign when CC is enabled. Defaults to the full effective role set (union of `app_role` + `app_roles`) when empty. | `list(string)` | `[]` | no |
+
+\* One of `app_role` or `app_roles` must produce a non-empty role set. The module fails at plan time otherwise.
 
 ## Outputs
 

@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-04-23
+- Added `app_roles` (list(string), default `[]`) input to declare multiple app
+  roles on a single application in one module call — useful when one Azure AD
+  app backs several gateway role checks (e.g. one role per `method:path`
+  string consumed by a post-function / Datakit role check).
+- `app_role` (string) is now optional (default `null`) and may be combined with
+  `app_roles`; values are merged and de-duplicated into an internal effective
+  role list. Fully backward-compatible — existing callers setting only
+  `app_role` continue to work unchanged.
+- `service_principal_roles` now defaults to the full effective role list
+  (union of `app_role` and `app_roles`) when left empty. Previously defaulted
+  to `[var.app_role]`.
+- Added a module precondition that at least one role is declared.
+
 ## [2.1.0] - 2026-04-22
 - Added support for the client-credentials (M2M) flow via two new variables:
   - `enable_client_credentials` (bool, default `false`) — opt-in switch

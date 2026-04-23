@@ -15,10 +15,16 @@ module "oidc_provider" {
   display_name    = "m2m-demo-app"
   identifier_uris = ["api://m2m-demo-app"]
   redirect_uris   = [] # not used by CC, but variable is required
-  app_role        = "service.read"
+
+  # Multi-role app: every value in app_roles becomes an app role on the
+  # application, and (because CC is enabled) is self-assigned to the SP
+  # so M2M tokens carry all of them in the `roles` claim.
+  app_roles = ["service.read", "service.write"]
 
   enable_client_credentials = true
-  service_principal_roles   = ["service.read", "service.write"]
+  # service_principal_roles omitted → defaults to the full app_roles list.
+  # Pass an explicit subset here if you want the SP to carry fewer roles
+  # than the application declares.
 }
 
 output "client_id" {

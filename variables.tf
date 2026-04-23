@@ -15,7 +15,14 @@ variable "redirect_uris" {
 
 variable "app_role" {
   type        = string
-  description = "The name of the app role to create. This will be used for description, display_name and value."
+  description = "A single app role to create. Retained for backward compatibility; prefer `app_roles` for new callers. If both are set they are merged and de-duplicated."
+  default     = null
+}
+
+variable "app_roles" {
+  type        = list(string)
+  description = "App roles to create on the application. Use this for multi-role setups where one app needs to back several downstream authorization decisions (e.g. several route-scoped role strings consumed by API-gateway role checks). Merged with `app_role` and de-duplicated. At least one of `app_role` or `app_roles` must produce a non-empty role set."
+  default     = []
 }
 
 variable "users" {
@@ -38,6 +45,6 @@ variable "enable_client_credentials" {
 
 variable "service_principal_roles" {
   type        = list(string)
-  description = "App role values to assign to this app's own service principal for the client-credentials flow. Each value must be defined as an app role on the application (i.e. equal to var.app_role or one of var.users[*].role). Defaults to [var.app_role] when empty. Only used when var.enable_client_credentials = true."
+  description = "App role values to assign to this app's own service principal for the client-credentials flow. Each value must be defined as an app role on the application (i.e. appear in `app_role`, `app_roles`, or `users[*].role`). Defaults to the full effective `app_roles` list (union of `app_role` and `app_roles`) when empty. Only used when `enable_client_credentials = true`."
   default     = []
 }
